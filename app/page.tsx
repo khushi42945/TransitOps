@@ -32,13 +32,13 @@ const initialVehicles: Vehicle[] = [
   { id: 4, reg: 'TR-1847', model: 'MAN TGX 18.500', type: 'Truck', maxLoad: 18000, odometer: 176320, status: 'In Shop', cost: 115000, region: 'North', efficiency: 3.1 },
   { id: 5, reg: 'TL-7703', model: 'Schmitz Cargobull', type: 'Trailer', maxLoad: 27000, odometer: 83450, status: 'Available', cost: 61500, region: 'East', efficiency: 0 },
   { id: 6, reg: 'VN-1442', model: 'Ford Transit 350', type: 'Van', maxLoad: 1500, odometer: 39670, status: 'Available', cost: 39800, region: 'West', efficiency: 9.1 },
-  { id: 7, reg: 'TR-6610', model: 'DAF XF 480', type: 'Truck', maxLoad: 21000, odometer: 205100, status: 'Available', cost: 119000, region: 'Central', efficiency: 3.4 },
+  { id: 7, reg: 'TR-6610', model: 'DAF XF 480', type: 'Truck', maxLoad: 21000, odometer: 205100, status: 'On Trip', cost: 119000, region: 'Central', efficiency: 3.4 },
 ];
 
 const initialDrivers: Driver[] = [
   { id: 1, name: 'Marcus Reid', initials: 'MR', license: 'DL-8831-4290', category: 'CE', expiry: '2027-04-18', phone: '+1 (555) 018-2440', score: 96, status: 'On Trip', color: 'sage' },
   { id: 2, name: 'Elena Vasquez', initials: 'EV', license: 'DL-1042-7731', category: 'C', expiry: '2026-10-21', phone: '+1 (555) 013-8732', score: 91, status: 'Available', color: 'coral' },
-  { id: 3, name: 'Andre Williams', initials: 'AW', license: 'DL-5601-0284', category: 'CE', expiry: '2027-08-03', phone: '+1 (555) 014-3519', score: 88, status: 'Available', color: 'blue' },
+  { id: 3, name: 'Andre Williams', initials: 'AW', license: 'DL-5601-0284', category: 'CE', expiry: '2027-08-03', phone: '+1 (555) 014-3519', score: 88, status: 'On Trip', color: 'blue' },
   { id: 4, name: 'Priya Nair', initials: 'PN', license: 'DL-7744-6502', category: 'C1', expiry: '2025-11-12', phone: '+1 (555) 010-9982', score: 73, status: 'Suspended', color: 'lilac' },
   { id: 5, name: 'Daniel Kim', initials: 'DK', license: 'DL-2018-4310', category: 'CE', expiry: '2027-01-29', phone: '+1 (555) 011-2930', score: 98, status: 'Available', color: 'yellow' },
   { id: 6, name: 'Sofia Bennett', initials: 'SB', license: 'DL-3097-1644', category: 'C', expiry: '2026-10-16', phone: '+1 (555) 016-6031', score: 82, status: 'Off Duty', color: 'mint' },
