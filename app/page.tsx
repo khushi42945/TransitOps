@@ -12,6 +12,7 @@ import {
   Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import AuthView, { AuthRole, AuthUser } from './auth-view';
 
 type VehicleStatus = 'Available' | 'On Trip' | 'In Shop' | 'Retired';
 type DriverStatus = 'Available' | 'On Trip' | 'Off Duty' | 'Suspended';
@@ -97,6 +98,10 @@ const dateLabel = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateStr
 const currency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
 
 export default function Home() {
+  const [authReady, setAuthReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [section, setSection] = useState<Section>('Dashboard');
   const [role, setRole] = useState<Role>('Fleet Manager');
   const [vehicles, setVehicles] = useState(initialVehicles);
@@ -119,6 +124,44 @@ export default function Home() {
   const [completionForm, setCompletionForm] = useState({ tripId: '', odometer: '', fuel: '' });
   const [sortAscending, setSortAscending] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  const toDashboardRole = (authRole: AuthRole): Role => authRole === 'Driver / Dispatcher' ? 'Dispatcher' : authRole;
+  const toAuthRole = (dashboardRole: Role): AuthRole => dashboardRole === 'Dispatcher' ? 'Driver / Dispatcher' : dashboardRole;
+
+  useEffect(() => {
+    try {
+      const savedSession = window.localStorage.getItem('transitops-session');
+      if (savedSession) {
+        const user = JSON.parse(savedSession) as AuthUser;
+        const allowedRoles: AuthRole[] = ['Fleet Manager', 'Driver / Dispatcher', 'Safety Officer', 'Financial Analyst'];
+        if (user && typeof user.name === 'string' && typeof user.email === 'string' && allowedRoles.includes(user.role)) {
+          setCurrentUser(user);
+          setRole(toDashboardRole(user.role));
+          setIsAuthenticated(true);
+        } else {
+          window.localStorage.removeItem('transitops-session');
+        }
+      }
+    } catch {
+      window.localStorage.removeItem('transitops-session');
+    } finally {
+      setAuthReady(true);
+    }
+  }, []);
+
+  const authenticate = (user: AuthUser) => {
+    window.localStorage.setItem('transitops-session', JSON.stringify(user));
+    setCurrentUser(user);
+    setRole(toDashboardRole(user.role));
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    window.localStorage.removeItem('transitops-session');
+    setProfileMenuOpen(false);
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+  };
 
   const flash = (message: string) => {
     setToast(message);
@@ -307,6 +350,9 @@ export default function Home() {
   const statusCount = (status: TripStatus) => trips.filter((trip) => trip.status === status).length;
   const livePageTitle = section === 'Dashboard' ? 'Operations overview' : section;
 
+  if (!authReady) return <div className="auth-loading" aria-label="Restoring session"><span className="auth-loading-mark"><i /><i /><i /></span></div>;
+  if (!isAuthenticated || !currentUser) return <AuthView onAuthenticated={authenticate} />;
+
   return <div className={`app-shell ${dark ? 'theme-dark' : ''}`}>
     <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="brand-row"><div className="brand-mark"><span /><span /><span /></div><div className="brand-copy"><strong>Transit<span>Ops</span></strong><small><i /> Fleet live</small></div><button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close navigation"><X size={18} /></button></div>
@@ -317,8 +363,8 @@ export default function Home() {
       <div className="sidebar-spacer" />
       <div className="sidebar-bottom">
         <button className="nav-item utility-nav" onClick={() => flash('Help center is coming soon.')}><CircleHelp size={18} /><span>Help & support</span></button>
-        <div className="role-picker"><div className="role-label">VIEW AS</div><div className="select-wrap"><select aria-label="Switch role" value={role} onChange={(event) => { const nextRole = event.target.value as Role; setRole(nextRole); if (!roleAccess[nextRole].includes(section)) setSection('Dashboard'); flash(`Workspace switched to ${nextRole}.`); }}><option>Fleet Manager</option><option>Dispatcher</option><option>Safety Officer</option><option>Financial Analyst</option></select><ChevronDown size={14} /></div></div>
-        <div className="profile-row"><div className="profile-avatar">JM</div><div className="profile-copy"><strong>Jordan Miller</strong><span>{role}</span></div><button className="icon-button profile-menu" title="Profile settings" onClick={() => flash('Profile settings')}><Ellipsis size={18} /></button></div>
+        <div className="role-picker"><div className="role-label">VIEW AS</div><div className="select-wrap"><select aria-label="Switch role" value={role} onChange={(event) => { const nextRole = event.target.value as Role; setRole(nextRole); setCurrentUser((user) => { if (!user) return user; const updatedUser = { ...user, role: toAuthRole(nextRole) }; window.localStorage.setItem('transitops-session', JSON.stringify(updatedUser)); return updatedUser; }); if (!roleAccess[nextRole].includes(section)) setSection('Dashboard'); flash(`Workspace switched to ${nextRole}.`); }}><option>Fleet Manager</option><option>Dispatcher</option><option>Safety Officer</option><option>Financial Analyst</option></select><ChevronDown size={14} /></div></div>
+        <div className="profile-menu-wrap"><div className="profile-row"><div className="profile-avatar">{currentUser.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase()}</div><div className="profile-copy"><strong>{currentUser.name}</strong><span>{role}</span></div><button className="icon-button profile-menu" title="Profile and sign out" aria-label="Profile and sign out" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen((open) => !open)}><Ellipsis size={18} /></button></div>{profileMenuOpen && <div className="profile-dropdown"><span className="profile-email">{currentUser.email}</span><button onClick={logout}><UserRound size={15} /> Log out</button></div>}</div>
         <button className="theme-switch" onClick={() => setDark((current) => !current)} title={`Switch to ${dark ? 'light' : 'dark'} mode`}><span>{dark ? <Moon size={15} /> : <Sun size={15} />}{dark ? 'Dark appearance' : 'Light appearance'}</span><span className={`toggle ${dark ? 'toggle-on' : ''}`}><i /></span></button>
       </div>
       <div className="sidebar-footnote">TRANSITOPS <span>·</span> v2.4.0</div>
